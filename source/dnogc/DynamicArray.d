@@ -1,6 +1,7 @@
 module dnogc.DynamicArray;
 
 import std.experimental.allocator.mallocator;
+import std.traits;
 
 import dnogc.Utils;
 
@@ -14,7 +15,7 @@ debug
  * Dynamic array struct extremely inspired by this one :
  * https://github.com/economicmodeling/containers/blob/master/src/containers/dynamicarray.d
  */
-struct DynamicArray(T)
+struct DynamicArray(T, bool useGC = hasIndirections!T)
 {
     private size_t m_length;
     private size_t m_capacity;
@@ -31,10 +32,16 @@ struct DynamicArray(T)
         {
             this.m_array = cast(T[])Mallocator.instance.allocate(T.sizeof * capacity);
 
+			static if(useGC)
+			{
+				import core.memory: GC;
+				GC.addRange(this.m_array.ptr, T.sizeof * capacity);
+			}
+
             debug
             {
                 totalBytesAllocated += T.sizeof * capacity;
-                dln("Allocated " , T.sizeof * capacity , " bytes from ", file, " at ", line);
+                // dln("Allocated " , T.sizeof * capacity , " bytes from ", file, " at ", line);
             }
         }
     }
@@ -58,6 +65,12 @@ struct DynamicArray(T)
             }
         }
 
+		static if(useGC)
+		{
+			import core.memory : GC;
+			GC.removeRange(this.m_array.ptr);
+		}
+
         if(this.m_capacity != 0)
         {			
             Mallocator.instance.deallocate(this.m_array);
@@ -65,7 +78,7 @@ struct DynamicArray(T)
             debug 
             {
                 totalBytesFreed += T.sizeof * m_capacity;
-                dln("Freed " , T.sizeof * this.m_capacity , " bytes");
+                // dln("Freed " , T.sizeof * this.m_capacity , " bytes");
             }
         }
     }
@@ -95,8 +108,14 @@ struct DynamicArray(T)
             this.m_capacity = 4;
             this.m_array = cast(T[]) Mallocator.instance.allocate(T.sizeof * this.m_capacity);
 
+			static if(useGC)
+			{
+				import core.memory: GC;
+				GC.addRange(this.m_array.ptr, T.sizeof * this.m_capacity);
+			}
+
             debug totalBytesAllocated += T.sizeof * m_capacity;
-            debug dln("Allocated " , T.sizeof * this.m_capacity, " bytes from ", file, " at ", line);
+            // debug dln("Allocated " , T.sizeof * this.m_capacity, " bytes from ", file, " at ", line);
         }
         else if(this.m_length >= this.m_array.length)
         {
@@ -113,9 +132,16 @@ struct DynamicArray(T)
 
             Mallocator.instance.reallocate(ptr, T.sizeof * this.m_capacity);
 
-            debug dln("Reallocated " , T.sizeof * this.m_capacity, " bytes from ", file, " at ", line);
+            // debug dln("Reallocated " , T.sizeof * this.m_capacity, " bytes from ", file, " at ", line);
 
             this.m_array = cast(T[])ptr;
+
+            static if(useGC)
+			{
+				import core.memory: GC;
+				GC.removeRange(this.m_array.ptr);
+				GC.addRange(this.m_array.ptr, T.sizeof * this.m_capacity);
+			}
         }
 
         this.m_array[this.m_length++] = element;
