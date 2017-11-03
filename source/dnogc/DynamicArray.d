@@ -24,7 +24,7 @@ struct DynamicArray(T, bool useGC = hasIndirections!T)
 
     alias opDollar = length;
 
-    public this(in int capacity, string file = __FILE__, int line = __LINE__) @trusted nothrow @nogc
+    public this(in size_t capacity, string file = __FILE__, int line = __LINE__) @trusted nothrow @nogc
     {
         this.m_capacity = capacity;
 
