@@ -5,5 +5,6 @@
 	],
 	"description": "D nogc utilities",
 	"copyright": " ",
-	"license": "public"
+	"license": "public",
+	"version": "1.0.0"
 }

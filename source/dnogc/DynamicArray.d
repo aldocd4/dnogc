@@ -15,7 +15,7 @@ debug
  * Dynamic array struct extremely inspired by this one :
  * https://github.com/economicmodeling/containers/blob/master/src/containers/dynamicarray.d
  */
-struct DynamicArray(T, bool useGC = hasIndirections!T)
+struct DynamicArray(T, bool useGC = false)
 {
     private size_t m_length;
     private size_t m_capacity;
@@ -71,6 +71,8 @@ struct DynamicArray(T, bool useGC = hasIndirections!T)
             GC.removeRange(this.m_array.ptr);
         }
 
+        this.m_length = 0;
+        
         if(this.m_capacity != 0)
         {
             Mallocator.instance.deallocate(this.m_array);
